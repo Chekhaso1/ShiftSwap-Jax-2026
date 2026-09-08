@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="shiftswap-version" content="2026-fresh-login-v1">
+<title>ShiftSwap</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-icon">↔</div>
+    <h1>ShiftSwap</h1>
+    <p>Employee access</p>
+    <form id="loginForm">
+      <input id="loginCode" type="text" inputmode="numeric" autocomplete="off"
+             autocorrect="off" autocapitalize="off" spellcheck="false"
+             maxlength="6" pattern="[0-9]{6}" placeholder="6-digit employee code"
+             required>
+      <button type="submit">Enter ShiftSwap</button>
+    </form>
+    <div id="loginError" class="login-error"></div>
+  </div>
+</div>
+
+<div id="app" class="app hidden">
+  <header class="topbar">
+    <div class="brand">↔ <span>ShiftSwap</span></div>
+    <div class="user-area">
+      <span id="currentUser"></span>
+      <button id="logout" class="logout">Log out</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="board">▦ Board</button>
+    <button class="tab" data-tab="grab">📣 Days to Grab</button>
+    <button class="tab" data-tab="calendar">◷ Calendar</button>
+    <button class="tab" data-tab="messages">💬 Messages</button>
+    <button class="tab" data-tab="stats">📊 Stats</button>
+  </nav>
+
+  <main>
+    <section id="board" class="tab-panel active">
+      <div class="board-section available-section">
+        <div class="section-banner available-banner">
+          <div class="banner-icon">📣</div>
+          <div><h2>Available Days</h2><p>Days available for coworkers to grab.</p></div>
+          <div id="availableCount" class="count-badge">0 Available</div>
+        </div>
+        <div id="availableList" class="cards"></div>
+      </div>
+
+      <div class="board-section taken-section">
+        <div class="section-banner taken-banner">
+          <div class="banner-icon">✕</div>
+          <div><h2>Picked Up / Taken</h2><p>Days that have already been claimed.</p></div>
+          <div id="takenCount" class="count-badge">0 Taken</div>
+        </div>
+        <div id="takenList" class="cards"></div>
+      </div>
+    </section>
+
+    <section id="grab" class="tab-panel">
+      <div class="panel-head"><div><h2>📣 Days to Grab</h2><p>Post a day you want coworkers to cover.</p></div>
+      <button id="postDayBtn" class="primary">+ Post Available Day</button></div>
+      <div id="grabList" class="cards"></div>
+    </section>
+
+    <section id="calendar" class="tab-panel">
+      <div class="calendar-head">
+        <button id="prevMonth">‹</button><h2 id="monthTitle"></h2><button id="nextMonth">›</button>
+      </div>
+      <div class="weekdays"><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span></div>
+      <div id="calendarGrid" class="calendar-grid"></div>
+      <div class="legend"><span><i class="dot green"></i> Days to Grab</span><span><i class="dot red"></i> Taken</span></div>
+    </section>
+
+    <section id="messages" class="tab-panel">
+      <div class="panel-head"><div><h2>💬 Messages</h2><p>Share information with coworkers.</p></div></div>
+      <form id="messageForm" class="message-form">
+        <textarea id="messageText" maxlength="500" placeholder="Write a message..." required></textarea>
+        <button class="primary" type="submit">Post Message</button>
+      </form>
+      <div id="messagesList"></div>
+    </section>
+
+    <section id="stats" class="tab-panel">
+      <div class="stats-grid">
+        <div class="stat-card"><strong id="statAvailable">0</strong><span>Available Days</span></div>
+        <div class="stat-card"><strong id="statTaken">0</strong><span>Taken Days</span></div>
+        <div class="stat-card"><strong id="statEmployees">0</strong><span>Employees</span></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-card">
+    <button id="closeModal" class="modal-close">×</button>
+    <h2>📣 Post an Available Day</h2>
+    <form id="dayForm">
+      <label>Date<input id="dayDate" type="date" required></label>
+      <label>Note <span>(optional)</span><input id="dayNote" maxlength="200" placeholder="Optional note"></label>
+      <button class="primary" type="submit">Post Day</button>
+    </form>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+<script src="app.js?v=20260908"></script>
+</body>
+</html>
