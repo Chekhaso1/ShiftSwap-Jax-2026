@@ -125,6 +125,7 @@ document.querySelectorAll('.tab').forEach(btn=>btn.onclick=()=>{
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));$(btn.dataset.tab).classList.add('active');
 });
 $('postDayBtn').onclick=()=>{$('modal').classList.remove('hidden');$('dayDate').focus()};
+$('welcomePostBtn').onclick=()=>{$('modal').classList.remove('hidden');$('dayDate').focus()};
 $('closeModal').onclick=()=>{$('modal').classList.add('hidden')};
 $('modal').addEventListener('click',e=>{if(e.target.id==='modal')$('modal').classList.add('hidden')});
 $('dayForm').onsubmit=async e=>{
