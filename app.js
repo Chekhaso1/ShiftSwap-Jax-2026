@@ -1,9 +1,83 @@
 
+// ===== ShiftSwap session: keep login on refresh, sign out after 10 minutes inactive =====
+const SHIFT_SESSION_KEY = "shiftSwapUser";
+const SHIFT_ACTIVITY_KEY = "shiftSwapLastActivity";
+const SHIFT_INACTIVITY_MS = 10 * 60 * 1000;
+let shiftInactivityTimer = null;
+
+function saveShiftSession(user) {
+  localStorage.setItem(SHIFT_SESSION_KEY, JSON.stringify(user));
+  localStorage.setItem(SHIFT_ACTIVITY_KEY, String(Date.now()));
+  resetShiftInactivityTimer();
+}
+
+function getShiftSession() {
+  try {
+    const raw = localStorage.getItem(SHIFT_SESSION_KEY);
+    if (!raw) return null;
+    const last = Number(localStorage.getItem(SHIFT_ACTIVITY_KEY) || 0);
+    if (!last || Date.now() - last >= SHIFT_INACTIVITY_MS) {
+      clearShiftSession();
+      return null;
+    }
+    return JSON.parse(raw);
+  } catch (e) {
+    clearShiftSession();
+    return null;
+  }
+}
+
+function touchShiftSession() {
+  if (localStorage.getItem(SHIFT_SESSION_KEY)) {
+    localStorage.setItem(SHIFT_ACTIVITY_KEY, String(Date.now()));
+    resetShiftInactivityTimer();
+  }
+}
+
+function clearShiftSession() {
+  localStorage.removeItem(SHIFT_SESSION_KEY);
+  localStorage.removeItem(SHIFT_ACTIVITY_KEY);
+  if (shiftInactivityTimer) {
+    clearTimeout(shiftInactivityTimer);
+    shiftInactivityTimer = null;
+  }
+}
+
+function resetShiftInactivityTimer() {
+  if (!localStorage.getItem(SHIFT_SESSION_KEY)) return;
+  if (shiftInactivityTimer) clearTimeout(shiftInactivityTimer);
+  shiftInactivityTimer = setTimeout(() => {
+    clearShiftSession();
+    window.location.reload();
+  }, SHIFT_INACTIVITY_MS);
+}
+
+["click", "keydown", "mousemove", "scroll", "touchstart"].forEach(eventName => {
+  window.addEventListener(eventName, touchShiftSession, { passive: true });
+});
+
+window.addEventListener("load", () => {
+  if (getShiftSession()) resetShiftInactivityTimer();
+});
+
 /*
   FRESH ShiftSwap
   IMPORTANT: replace the value below with your NEW Google Apps Script /exec URL.
 */
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyYLHsL4Wa2FOHWvTCZ3D-884d2bm_5F7CJMEcDpuEqJfkk6IHEWgrDNkUzhkNoig1YJA/exec";
+
+
+
+// ===== Available Days: nearest upcoming date first =====
+function sortAvailableDays(days) {
+  return (Array.isArray(days) ? days.slice() : []).sort((a, b) => {
+    const aDate = new Date(String(a.date || "").trim() + "T00:00:00");
+    const bDate = new Date(String(b.date || "").trim() + "T00:00:00");
+    const aTime = Number.isNaN(aDate.getTime()) ? Number.MAX_SAFE_INTEGER : aDate.getTime();
+    const bTime = Number.isNaN(bDate.getTime()) ? Number.MAX_SAFE_INTEGER : bDate.getTime();
+    return aTime - bTime;
+  });
+}
 
 let currentUser=null, days=[], messages=[], month=new Date();
 const $=id=>document.getElementById(id);
