@@ -133,9 +133,9 @@ async function login(code){
   if(clean.length!==6)throw new Error('Enter exactly 6 digits.');
   const r=await jsonp({action:'login',code:clean});
   if(!r?.ok)throw new Error(r?.error||'Invalid employee code.');
-  // Intentionally NOT stored in localStorage/sessionStorage.
-  // A full page reload always requires the employee to enter the code again.
-  currentUser=r.user; unlock();
+  currentUser=r.user;
+  saveShiftSession(currentUser);
+  unlock();
 }
 $('loginCode').addEventListener('input',e=>e.target.value=e.target.value.replace(/\D/g,'').slice(0,6));
 $('loginForm').addEventListener('submit',async e=>{
@@ -143,12 +143,12 @@ $('loginForm').addEventListener('submit',async e=>{
   try{await login($('loginCode').value)}
   catch(err){$('loginError').textContent=err.message}
 });
-$('logout').onclick=()=>{currentUser=null;days=[];messages=[];showLogin()};
+$('logout').onclick=()=>{clearShiftSession();currentUser=null;days=[];messages=[];showLogin()};
 
 async function load(){
   try{
     const r=await api('list'); if(!r.ok)throw Error(r.error);
-    days=Array.isArray(r.days)?r.days:[];messages=Array.isArray(r.messages)?r.messages:[];
+    days=sortAvailableDays(Array.isArray(r.days)?r.days:[]);messages=Array.isArray(r.messages)?r.messages:[];
     renderAll();
   }catch(e){toast(e.message||'Unable to load ShiftSwap')}
 }
@@ -163,8 +163,9 @@ function card(d){
   </div>`;
 }
 function renderAll(){
+  days=sortAvailableDays(days);
   const av=days.filter(d=>String(d.status).toLowerCase()!=='taken');
-  const tk=days.filter(d=>String(d.status).toLowerCase()==='taken');
+  const tk=sortAvailableDays(days.filter(d=>String(d.status).toLowerCase()==='taken'));
   $('availableCount').textContent=`${av.length} Available`;$('takenCount').textContent=`${tk.length} Taken`;
   $('availableList').innerHTML=av.map(card).join('')||'<div class="empty">No available days.</div>';
   $('takenList').innerHTML=tk.map(card).join('')||'<div class="empty">No picked-up days yet.</div>';
@@ -210,4 +211,5 @@ $('messageForm').onsubmit=async e=>{
   e.preventDefault();
   try{const r=await api('addMessage',{message:$('messageText').value.trim()});if(!r.ok)throw Error(r.error);e.target.reset();toast('Message posted.');await load()}catch(x){alert(x.message)}
 };
-showLogin();
+const restoredUser=getShiftSession();
+if(restoredUser){ currentUser=restoredUser; unlock(); } else { showLogin(); }
