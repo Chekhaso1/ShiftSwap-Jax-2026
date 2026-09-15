@@ -68,6 +68,30 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyYLHsL4Wa2FOHWvTCZ
 
 
 
+
+
+// ===== ShiftSwap connection reliability =====
+const SHIFT_REQUEST_TIMEOUT_MS = 15000;
+const SHIFT_REQUEST_RETRIES = 2;
+
+function shiftReliableFetch(url, options, attempt) {
+  options = options || {};
+  attempt = attempt || 0;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SHIFT_REQUEST_TIMEOUT_MS);
+  const requestOptions = Object.assign({}, options, {signal: controller.signal});
+
+  return fetch(url, requestOptions)
+    .finally(() => clearTimeout(timer))
+    .catch(err => {
+      if (attempt < SHIFT_REQUEST_RETRIES) {
+        return new Promise(resolve => setTimeout(resolve, 800 * (attempt + 1)))
+          .then(() => shiftReliableFetch(url, options, attempt + 1));
+      }
+      throw err;
+    });
+}
+
 // ===== Available Days: nearest upcoming date first =====
 function sortAvailableDays(days) {
   return (Array.isArray(days) ? days.slice() : []).sort((a, b) => {
