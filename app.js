@@ -68,30 +68,6 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyYLHsL4Wa2FOHWvTCZ
 
 
 
-
-
-// ===== ShiftSwap connection reliability =====
-const SHIFT_REQUEST_TIMEOUT_MS = 15000;
-const SHIFT_REQUEST_RETRIES = 2;
-
-function shiftReliableFetch(url, options, attempt) {
-  options = options || {};
-  attempt = attempt || 0;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), SHIFT_REQUEST_TIMEOUT_MS);
-  const requestOptions = Object.assign({}, options, {signal: controller.signal});
-
-  return fetch(url, requestOptions)
-    .finally(() => clearTimeout(timer))
-    .catch(err => {
-      if (attempt < SHIFT_REQUEST_RETRIES) {
-        return new Promise(resolve => setTimeout(resolve, 800 * (attempt + 1)))
-          .then(() => shiftReliableFetch(url, options, attempt + 1));
-      }
-      throw err;
-    });
-}
-
 // ===== Available Days: nearest upcoming date first =====
 function sortAvailableDays(days) {
   return (Array.isArray(days) ? days.slice() : []).sort((a, b) => {
@@ -169,13 +145,46 @@ $('loginForm').addEventListener('submit',async e=>{
 });
 $('logout').onclick=()=>{clearShiftSession();currentUser=null;days=[];messages=[];showLogin()};
 
-async function load(){
-  try{
-    const r=await api('list'); if(!r.ok)throw Error(r.error);
-    days=sortAvailableDays(Array.isArray(r.days)?r.days:[]);messages=Array.isArray(r.messages)?r.messages:[];
+let shiftLoadPromise=null;
+let shiftListCache=null;
+let shiftListCacheAt=0;
+const SHIFT_CLIENT_CACHE_MS=2500;
+
+async function load(force=false){
+  if(!force && shiftListCache && (Date.now()-shiftListCacheAt)<SHIFT_CLIENT_CACHE_MS){
+    days=sortAvailableDays(shiftListCache.days||[]);
+    messages=shiftListCache.messages||[];
     renderAll();
-  }catch(e){toast(e.message||'Unable to load ShiftSwap')}
+    return;
+  }
+
+  if(shiftLoadPromise && !force){
+    return shiftLoadPromise;
+  }
+
+  shiftLoadPromise=(async()=>{
+    try{
+      const r=await api('list');
+      if(!r.ok)throw Error(r.error);
+      shiftListCache={
+        days:Array.isArray(r.days)?r.days:[],
+        messages:Array.isArray(r.messages)?r.messages:[]
+      };
+      shiftListCacheAt=Date.now();
+      days=sortAvailableDays(shiftListCache.days);
+      messages=shiftListCache.messages;
+      renderAll();
+    }catch(e){
+      toast(e.message||'Unable to load ShiftSwap');
+      throw e;
+    }finally{
+      shiftLoadPromise=null;
+    }
+  })();
+
+  return shiftLoadPromise;
 }
+
 function card(d){
   const taken=String(d.status).toLowerCase()==='taken';
   return `<div class="day-card ${taken?'taken':''}">
@@ -201,7 +210,7 @@ function renderAll(){
 }
 async function pickDay(id){
   if(!confirm('Pick up this day?'))return;
-  try{const r=await api('pickDay',{id});if(!r.ok)throw Error(r.error);toast('Day picked up.');await load()}catch(e){alert(e.message)}
+  try{const r=await api('pickDay',{id});if(!r.ok)throw Error(r.error);toast('Day picked up.');await load(true)}catch(e){alert(e.message)}
 }
 function renderCalendar(){
   const y=month.getFullYear(),m=month.getMonth(),first=new Date(y,m,1),off=(first.getDay()+6)%7,last=new Date(y,m+1,0).getDate();
@@ -229,11 +238,11 @@ $('closeModal').onclick=()=>{$('modal').classList.add('hidden')};
 $('modal').addEventListener('click',e=>{if(e.target.id==='modal')$('modal').classList.add('hidden')});
 $('dayForm').onsubmit=async e=>{
   e.preventDefault();
-  try{const r=await api('addDay',{date:$('dayDate').value,note:$('dayNote').value.trim()});if(!r.ok)throw Error(r.error);e.target.reset();$('modal').classList.add('hidden');toast('Available day posted.');await load()}catch(x){alert(x.message)}
+  try{const r=await api('addDay',{date:$('dayDate').value,note:$('dayNote').value.trim()});if(!r.ok)throw Error(r.error);e.target.reset();$('modal').classList.add('hidden');toast('Available day posted.');await load(true)}catch(x){alert(x.message)}
 };
 $('messageForm').onsubmit=async e=>{
   e.preventDefault();
-  try{const r=await api('addMessage',{message:$('messageText').value.trim()});if(!r.ok)throw Error(r.error);e.target.reset();toast('Message posted.');await load()}catch(x){alert(x.message)}
+  try{const r=await api('addMessage',{message:$('messageText').value.trim()});if(!r.ok)throw Error(r.error);e.target.reset();toast('Message posted.');await load(true)}catch(x){alert(x.message)}
 };
 const restoredUser=getShiftSession();
 if(restoredUser){ currentUser=restoredUser; unlock(); } else { showLogin(); }
