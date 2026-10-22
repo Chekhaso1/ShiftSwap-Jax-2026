@@ -185,10 +185,31 @@ async function load(force=false){
   return shiftLoadPromise;
 }
 
+
+// Populate shift time selectors in 15-minute military-time increments.
+function populateMilitaryTimes(){
+  const options=[];
+  for(let minutes=0; minutes<24*60; minutes+=15){
+    const hh=String(Math.floor(minutes/60)).padStart(2,'0');
+    const mm=String(minutes%60).padStart(2,'0');
+    const value=`${hh}:${mm}`;
+    options.push(`<option value="${value}">${value}</option>`);
+  }
+  const start=$('dayStartTime'), end=$('dayEndTime');
+  if(start && end && !start.options.length){
+    start.innerHTML=options.join('');
+    end.innerHTML=options.join('');
+    start.value='07:00';
+    end.value='15:00';
+  }
+}
+populateMilitaryTimes();
+
 function card(d){
   const taken=String(d.status).toLowerCase()==='taken';
   return `<div class="day-card ${taken?'taken':''}">
     <h3>📅 ${esc(displayDate(d.date))}</h3>
+    ${(d.startTime||d.endTime)?`<p class="shift-hours">🕒 ${esc(d.startTime||'--:--')} – ${esc(d.endTime||'--:--')}</p>`:''}
     ${d.note?`<p>${esc(d.note)}</p>`:''}
     ${taken?`<p>Taken by <b>${esc(d.pickedUpBy)}</b></p>`:''}
     <span class="status-pill ${taken?'taken-pill':'available-pill'}">${taken?'Taken':'Available'}</span>
@@ -238,7 +259,7 @@ $('closeModal').onclick=()=>{$('modal').classList.add('hidden')};
 $('modal').addEventListener('click',e=>{if(e.target.id==='modal')$('modal').classList.add('hidden')});
 $('dayForm').onsubmit=async e=>{
   e.preventDefault();
-  try{const r=await api('addDay',{date:$('dayDate').value,note:$('dayNote').value.trim()});if(!r.ok)throw Error(r.error);e.target.reset();$('modal').classList.add('hidden');toast('Available day posted.');await load(true)}catch(x){alert(x.message)}
+  try{const r=await api('addDay',{date:$('dayDate').value,startTime:$('dayStartTime').value,endTime:$('dayEndTime').value,note:$('dayNote').value.trim()});if(!r.ok)throw Error(r.error);e.target.reset();$('modal').classList.add('hidden');toast('Available day posted.');await load(true)}catch(x){alert(x.message)}
 };
 $('messageForm').onsubmit=async e=>{
   e.preventDefault();
