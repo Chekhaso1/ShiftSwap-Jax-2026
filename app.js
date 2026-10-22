@@ -188,6 +188,8 @@ async function load(force=false){
 
 // Populate shift time selectors in 15-minute military-time increments.
 function populateMilitaryTimes(){
+  const start=$('dayStartTime'), end=$('dayEndTime');
+  if(!start || !end) return;
   const options=[];
   for(let minutes=0; minutes<24*60; minutes+=15){
     const hh=String(Math.floor(minutes/60)).padStart(2,'0');
@@ -195,11 +197,12 @@ function populateMilitaryTimes(){
     const value=`${hh}:${mm}`;
     options.push(`<option value="${value}">${value}</option>`);
   }
-  const start=$('dayStartTime'), end=$('dayEndTime');
-  if(start && end && !start.options.length){
+  if(start.options.length===0){
     start.innerHTML=options.join('');
-    end.innerHTML=options.join('');
     start.value='07:00';
+  }
+  if(end.options.length===0){
+    end.innerHTML=options.join('');
     end.value='15:00';
   }
 }
