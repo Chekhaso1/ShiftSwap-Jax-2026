@@ -209,7 +209,8 @@ function card(d){
   const taken=String(d.status).toLowerCase()==='taken';
   return `<div class="day-card ${taken?'taken':''}">
     <h3>📅 ${esc(displayDate(d.date))}</h3>
-    ${(d.startTime||d.endTime)?`<p class="shift-hours">🕒 ${esc(d.startTime||'--:--')} – ${esc(d.endTime||'--:--')}</p>`:''}
+    ${(d.startTime||d.endTime)?`<p class="shift-hours">🕒 <strong>Time slot:</strong> ${esc(d.startTime||'--:--')} – ${esc(d.endTime||'--:--')}</p>`:''}
+    <p class="posted-by">👤 <strong>Posted by:</strong> ${esc(d.name||'Officer')}</p>
     ${d.note?`<p>${esc(d.note)}</p>`:''}
     ${taken?`<p>Taken by <b>${esc(d.pickedUpBy)}</b></p>`:''}
     <span class="status-pill ${taken?'taken-pill':'available-pill'}">${taken?'Taken':'Available'}</span>

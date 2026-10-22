@@ -57,3 +57,7 @@ main{max-width:1450px;margin:auto;padding:10px 24px 40px}
 .time-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .time-fields select{width:100%;padding:12px;border:1px solid #d6dfdc;border-radius:10px;background:#fff;color:#20312b;font:inherit}
 @media(max-width:520px){.time-fields{grid-template-columns:1fr}}
+
+/* Dashboard shift details */
+.shift-hours{font-weight:600;margin:8px 0;color:#176b4d}
+.posted-by{margin:6px 0;color:#475569;font-size:.95rem}
