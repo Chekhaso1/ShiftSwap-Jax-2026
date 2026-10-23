@@ -135,7 +135,7 @@
     var end = document.getElementById('dayEndTime');
     if (!start || !end) return;
     function fill(select, defaultValue) {
-      if (select.options.length > 0) return;
+      if (select.options.length >= 90) return;
       var fragment = document.createDocumentFragment();
       for (var minutes = 0; minutes < 1440; minutes += 15) {
         var hh = String(Math.floor(minutes / 60)).padStart(2, '0');
@@ -155,6 +155,6 @@
   fillShiftTimes();
 })();
 </script>
-<script src="app.js?v=20261023-time-slots-inline-fix"></script>
+<script src="app.js?v=20261023-time-options-rebuild"></script>
 </body>
 </html>

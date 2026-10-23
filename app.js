@@ -197,11 +197,11 @@ function populateMilitaryTimes(){
     const value=`${hh}:${mm}`;
     options.push(`<option value="${value}">${value}</option>`);
   }
-  if(start.options.length===0){
+  if(start.options.length<90){
     start.innerHTML=options.join('');
     start.value='07:00';
   }
-  if(end.options.length===0){
+  if(end.options.length<90){
     end.innerHTML=options.join('');
     end.value='15:00';
   }
