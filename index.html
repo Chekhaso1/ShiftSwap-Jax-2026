@@ -127,6 +127,34 @@
   </div>
 </div>
 <div id="toast" class="toast"></div>
-<script src="app.js?v=20261022-time-slots"></script>
+<script>
+// Fallback initializer: populate the time dropdowns even if app.js fails to initialize.
+(function () {
+  function fillShiftTimes() {
+    var start = document.getElementById('dayStartTime');
+    var end = document.getElementById('dayEndTime');
+    if (!start || !end) return;
+    function fill(select, defaultValue) {
+      if (select.options.length > 0) return;
+      var fragment = document.createDocumentFragment();
+      for (var minutes = 0; minutes < 1440; minutes += 15) {
+        var hh = String(Math.floor(minutes / 60)).padStart(2, '0');
+        var mm = String(minutes % 60).padStart(2, '0');
+        var value = hh + ':' + mm;
+        var option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        fragment.appendChild(option);
+      }
+      select.appendChild(fragment);
+      select.value = defaultValue;
+    }
+    fill(start, '07:00');
+    fill(end, '15:00');
+  }
+  fillShiftTimes();
+})();
+</script>
+<script src="app.js?v=20261023-time-slots-inline-fix"></script>
 </body>
 </html>
