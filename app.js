@@ -64,7 +64,7 @@ window.addEventListener("load", () => {
   FRESH ShiftSwap
   IMPORTANT: replace the value below with your NEW Google Apps Script /exec URL.
 */
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxFcNiHq6kYWbknizPMpW7pejLLv_Gr0LDEgSNo01L_fjMwd2RS443luPHhJJyXHaG9Dw/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyYLHsL4Wa2FOHWvTCZ3D-884d2bm_5F7CJMEcDpuEqJfkk6IHEWgrDNkUzhkNoig1YJA/exec";
 
 
 
@@ -188,8 +188,6 @@ async function load(force=false){
 
 // Populate shift time selectors in 15-minute military-time increments.
 function populateMilitaryTimes(){
-  const start=$('dayStartTime'), end=$('dayEndTime');
-  if(!start || !end) return;
   const options=[];
   for(let minutes=0; minutes<24*60; minutes+=15){
     const hh=String(Math.floor(minutes/60)).padStart(2,'0');
@@ -197,12 +195,11 @@ function populateMilitaryTimes(){
     const value=`${hh}:${mm}`;
     options.push(`<option value="${value}">${value}</option>`);
   }
-  if(start.options.length<90){
+  const start=$('dayStartTime'), end=$('dayEndTime');
+  if(start && end && !start.options.length){
     start.innerHTML=options.join('');
-    start.value='07:00';
-  }
-  if(end.options.length<90){
     end.innerHTML=options.join('');
+    start.value='07:00';
     end.value='15:00';
   }
 }
@@ -211,13 +208,11 @@ populateMilitaryTimes();
 function card(d){
   const taken=String(d.status).toLowerCase()==='taken';
   return `<div class="day-card ${taken?'taken':''}">
-    <h3>📅 ${esc(displayDate(d.date))}</h3>
-    ${(d.startTime||d.endTime)?`<p class="shift-hours">🕒 <strong>Time slot:</strong> ${esc(d.startTime||'--:--')} – ${esc(d.endTime||'--:--')}</p>`:''}
-    <p class="posted-by">👤 <strong>Posted by:</strong> ${esc(d.name||'Officer')}</p>
-    ${d.note?`<p>${esc(d.note)}</p>`:''}
-    ${taken?`<p>Taken by <b>${esc(d.pickedUpBy)}</b></p>`:''}
-    <span class="status-pill ${taken?'taken-pill':'available-pill'}">${taken?'Taken':'Available'}</span>
-    ${!taken?`<div class="card-actions"><button class="primary grab-btn" onclick="pickDay('${esc(d.id)}')">Pick Up</button></div>`:''}
+    <div class="shift-date"><span class="line-icon">▦</span><strong>${esc(displayDate(d.date))}</strong></div>
+    ${(d.startTime||d.endTime)?`<p class="shift-hours"><span class="line-icon clock-icon">◷</span><span><strong>Time slot:</strong> ${esc(d.startTime||'--:--')} – ${esc(d.endTime||'--:--')}</span></p>`:''}
+    <p class="posted-by"><span class="line-icon">♙</span><span><strong>Posted by:</strong> ${esc(d.name||'Officer')}</span></p>
+    ${d.note?`<p class="shift-note">${esc(d.note)}</p>`:''}
+    ${taken?`<p class="taken-by">Taken by <b>${esc(d.pickedUpBy)}</b></p><span class="status-pill taken-pill">Taken</span>`:`<span class="status-pill available-pill">Available</span><div class="card-actions"><button class="primary grab-btn" onclick="pickDay('${esc(d.id)}')">Pick Up</button></div>`}
   </div>`;
 }
 function renderAll(){

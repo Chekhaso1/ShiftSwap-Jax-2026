@@ -1,5 +1,4 @@
 
-
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f7fa;color:#0b2742}
 button,input,textarea{font:inherit}
@@ -62,3 +61,22 @@ main{max-width:1450px;margin:auto;padding:10px 24px 40px}
 /* Dashboard shift details */
 .shift-hours{font-weight:600;margin:8px 0;color:#176b4d}
 .posted-by{margin:6px 0;color:#475569;font-size:.95rem}
+
+
+/* Compact shift card matching the requested reference */
+.day-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;box-shadow:none;color:#171717}
+.day-card h3{margin:0}
+.shift-date{display:flex;align-items:center;gap:9px;font-size:17px;line-height:1.35;margin:0 0 11px;color:#171717}
+.line-icon{width:16px;min-width:16px;display:inline-flex;align-items:center;justify-content:center;font-size:18px;line-height:1;color:#171717;font-weight:400}
+.shift-hours,.posted-by{display:flex;align-items:center;gap:8px;margin:0 0 11px;font-size:14px;line-height:1.35;font-weight:400;color:#171717}
+.shift-hours{color:#171717}
+.shift-hours .clock-icon{color:#138b62}
+.shift-hours strong,.posted-by strong{font-weight:600}
+.posted-by{margin-bottom:8px}
+.shift-note{margin:0 0 10px;color:#4b5563;font-size:14px}
+.day-card .status-pill{display:inline-flex;align-items:center;margin:2px 0 8px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.day-card .available-pill{background:#d9f5e5;color:#168047}
+.day-card .taken-pill{background:#fee2e2;color:#b91c1c}
+.day-card .card-actions{margin-top:2px}
+.day-card .grab-btn{border-radius:999px;padding:9px 16px;background:#111;color:#fff;border:0;font-weight:600}
+.day-card.taken{border-color:#f0d6d6}
