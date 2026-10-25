@@ -64,7 +64,7 @@ window.addEventListener("load", () => {
   FRESH ShiftSwap
   IMPORTANT: replace the value below with your NEW Google Apps Script /exec URL.
 */
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyYLHsL4Wa2FOHWvTCZ3D-884d2bm_5F7CJMEcDpuEqJfkk6IHEWgrDNkUzhkNoig1YJA/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxFcNiHq6kYWbknizPMpW7pejLLv_Gr0LDEgSNo01L_fjMwd2RS443luPHhJJyXHaG9Dw/exec";
 
 
 
