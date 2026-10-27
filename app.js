@@ -228,6 +228,14 @@ function renderAll(){
   $('takenList').innerHTML=tk.map(card).join('')||'<div class="empty">No picked-up days yet.</div>';
   $('grabList').innerHTML=av.map(card).join('')||'<div class="empty">No days to grab right now.</div>';
   $('messagesList').innerHTML=messages.map(m=>`<div class="message"><b>${esc(m.name)}</b><p>${esc(m.message)}</p><small>${esc(m.createdAt)}</small></div>`).join('')||'<div class="message">No messages yet.</div>';
+  // Display the newest team message in the orange scrolling banner.
+  const broadcast = $('teamBroadcastText');
+  if (broadcast) {
+    const latestMessage = messages[0];
+    broadcast.textContent = latestMessage && latestMessage.message
+      ? `${latestMessage.name ? latestMessage.name + ': ' : ''}${latestMessage.message}`
+      : 'Welcome to ShiftSwap! Check the Messages tab for team announcements.';
+  }
   $('statAvailable').textContent=av.length;$('statTaken').textContent=tk.length;
   $('statEmployees').textContent=new Set(days.map(d=>d.name).filter(Boolean)).size;
   renderCalendar();
