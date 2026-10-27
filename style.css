@@ -80,3 +80,81 @@ main{max-width:1450px;margin:auto;padding:10px 24px 40px}
 .day-card .card-actions{margin-top:2px}
 .day-card .grab-btn{border-radius:999px;padding:9px 16px;background:#111;color:#fff;border:0;font-weight:600}
 .day-card.taken{border-color:#f0d6d6}
+/* Orange scrolling team broadcast */
+.team-broadcast {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: min(1400px, calc(100% - 32px));
+  margin: 18px auto 24px;
+  padding: 14px 18px;
+  background: linear-gradient(90deg, #ff8c00, #ffad32);
+  color: #382000;
+  border: 1px solid #ed7900;
+  border-radius: 12px;
+  box-shadow: 0 5px 14px rgba(120, 70, 0, 0.14);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.broadcast-label {
+  flex-shrink: 0;
+  font-weight: 800;
+  white-space: nowrap;
+  padding-right: 14px;
+  border-right: 2px solid rgba(56, 32, 0, 0.3);
+}
+
+.broadcast-track {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.broadcast-message {
+  display: inline-block;
+  font-weight: 600;
+  animation: teamBroadcastScroll 24s linear infinite;
+}
+
+.team-broadcast:hover .broadcast-message {
+  animation-play-state: paused;
+}
+
+@keyframes teamBroadcastScroll {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .broadcast-message {
+    animation: none;
+    white-space: normal;
+  }
+
+  .broadcast-track {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 600px) {
+  .team-broadcast {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .broadcast-label {
+    border-right: none;
+    padding-right: 0;
+  }
+
+  .broadcast-track {
+    width: 100%;
+  }
+}
