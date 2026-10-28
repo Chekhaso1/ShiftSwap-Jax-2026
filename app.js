@@ -208,8 +208,25 @@ populateMilitaryTimes();
 function card(d){
   const taken=String(d.status).toLowerCase()==='taken';
   // Accept both the Apps Script API names and the Google Sheet column names.
-  const startTime=d.startTime ?? d.StartTime ?? d.start_time ?? d.start ?? '';
-  const endTime=d.endTime ?? d.EndTime ?? d.end_time ?? d.end ?? '';
+  function formatMilitaryTime(value) {
+  if (value === null || value === undefined || value === '') return '';
+
+  const text = String(value).trim();
+
+  // Handle full date strings returned by Google Sheets.
+  const match = text.match(/(\d{1,2}):(\d{2})/);
+  if (match) {
+    return match[1].padStart(2, '0') + match[2];
+  }
+
+  // Handle simple HH:mm values.
+  const simple = text.match(/^(\d{1,2})(\d{2})$/);
+  if (simple) return simple[1].padStart(2, '0') + simple[2];
+
+  return text;
+}
+  const startTime=formatMilitaryTime(d.startTime ?? d.StartTime ?? d.start_time ?? d.start ?? '');
+  const endTime=formatMilitaryTime(d.endTime ?? d.EndTime ?? d.end_time ?? d.end ?? '');
   const hasTime=String(startTime).trim()!=='' || String(endTime).trim()!=='';
   return `<div class="day-card ${taken?'taken':''}">
     <div class="shift-date"><span class="line-icon">▦</span><strong>${esc(displayDate(d.date))}</strong></div>
