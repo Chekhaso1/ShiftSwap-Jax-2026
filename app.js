@@ -1,4 +1,5 @@
 
+
 // ===== ShiftSwap session: keep login on refresh, sign out after 10 minutes inactive =====
 const SHIFT_SESSION_KEY = "shiftSwapUser";
 const SHIFT_ACTIVITY_KEY = "shiftSwapLastActivity";
@@ -126,6 +127,7 @@ function showLogin(){
 function unlock(){
   $('loginScreen').classList.add('hidden');$('app').classList.remove('hidden');
   $('currentUser').textContent=`👤 ${currentUser.name}`;
+  if(typeof addAdminTabForUser === 'function') addAdminTabForUser();
   load();
 }
 async function login(code){
@@ -208,29 +210,12 @@ populateMilitaryTimes();
 function card(d){
   const taken=String(d.status).toLowerCase()==='taken';
   // Accept both the Apps Script API names and the Google Sheet column names.
-  function formatMilitaryTime(value) {
-  if (value === null || value === undefined || value === '') return '';
-
-  const text = String(value).trim();
-
-  // Handle full date strings returned by Google Sheets.
-  const match = text.match(/(\d{1,2}):(\d{2})/);
-  if (match) {
-    return match[1].padStart(2, '0') + match[2];
-  }
-
-  // Handle simple HH:mm values.
-  const simple = text.match(/^(\d{1,2})(\d{2})$/);
-  if (simple) return simple[1].padStart(2, '0') + simple[2];
-
-  return text;
-}
-  const startTime=formatMilitaryTime(d.startTime ?? d.StartTime ?? d.start_time ?? d.start ?? '');
-  const endTime=formatMilitaryTime(d.endTime ?? d.EndTime ?? d.end_time ?? d.end ?? '');
+  const startTime=d.startTime ?? d.StartTime ?? d.start_time ?? d.start ?? '';
+  const endTime=d.endTime ?? d.EndTime ?? d.end_time ?? d.end ?? '';
   const hasTime=String(startTime).trim()!=='' || String(endTime).trim()!=='';
   return `<div class="day-card ${taken?'taken':''}">
     <div class="shift-date"><span class="line-icon">▦</span><strong>${esc(displayDate(d.date))}</strong></div>
-    ${hasTime?`<p class="shift-hours"><span class="line-icon clock-icon">◷</span><span><strong>Time slot:</strong> ${esc(startTime ? startTime.replace(':','') : '----')}-${esc(endTime ? endTime.replace(':','') : '----')}</span></p>`:''}
+    ${hasTime?`<p class="shift-hours"><span class="line-icon clock-icon">◷</span><span><strong>Time slot:</strong> ${esc(startTime||'--:--')} – ${esc(endTime||'--:--')}</span></p>`:''}
     <p class="posted-by"><span class="line-icon">♙</span><span><strong>Posted by:</strong> ${esc(d.name||'Officer')}</span></p>
     ${d.note?`<p class="shift-note">${esc(d.note)}</p>`:''}
     ${taken?`<p class="taken-by">Taken by <b>${esc(d.pickedUpBy)}</b></p><span class="status-pill taken-pill">Taken</span>`:`<span class="status-pill available-pill">Available</span><div class="card-actions"><button class="primary grab-btn" onclick="pickDay('${esc(d.id)}')">Pick Up</button></div>`}
@@ -245,14 +230,6 @@ function renderAll(){
   $('takenList').innerHTML=tk.map(card).join('')||'<div class="empty">No picked-up days yet.</div>';
   $('grabList').innerHTML=av.map(card).join('')||'<div class="empty">No days to grab right now.</div>';
   $('messagesList').innerHTML=messages.map(m=>`<div class="message"><b>${esc(m.name)}</b><p>${esc(m.message)}</p><small>${esc(m.createdAt)}</small></div>`).join('')||'<div class="message">No messages yet.</div>';
-  // Display the newest team message in the orange scrolling banner.
-  const broadcast = $('teamBroadcastText');
-  if (broadcast) {
-    const latestMessage = messages[0];
-    broadcast.textContent = latestMessage && latestMessage.message
-      ? `${latestMessage.name ? latestMessage.name + ': ' : ''}${latestMessage.message}`
-      : 'Welcome to ShiftSwap! Check the Messages tab for team announcements.';
-  }
   $('statAvailable').textContent=av.length;$('statTaken').textContent=tk.length;
   $('statEmployees').textContent=new Set(days.map(d=>d.name).filter(Boolean)).size;
   renderCalendar();
@@ -293,5 +270,206 @@ $('messageForm').onsubmit=async e=>{
   e.preventDefault();
   try{const r=await api('addMessage',{message:$('messageText').value.trim()});if(!r.ok)throw Error(r.error);e.target.reset();toast('Message posted.');await load(true)}catch(x){alert(x.message)}
 };
+
+// ===== Administrator-only monthly reports =====
+function isAdminUser(){
+  return String(currentUser?.role || '').trim().toLowerCase() === 'admin';
+}
+
+function addAdminTabForUser(){
+  const nav = document.querySelector('.tabs');
+  const main = document.querySelector('main');
+  if(!nav || !main || !isAdminUser()) return;
+
+  if(!$('adminTabButton')){
+    const btn = document.createElement('button');
+    btn.id = 'adminTabButton';
+    btn.className = 'tab';
+    btn.dataset.tab = 'adminReports';
+    btn.textContent = '🔒 Admin Reports';
+    nav.appendChild(btn);
+
+    const section = document.createElement('section');
+    section.id = 'adminReports';
+    section.className = 'tab-panel';
+    section.innerHTML = `
+      <div class="admin-report-head">
+        <div>
+          <div class="welcome-kicker">PRIVATE ADMINISTRATOR AREA</div>
+          <h2>Monthly ShiftSwap Reports</h2>
+          <p>Requests, accepted shifts, employee activity, and timestamps.</p>
+        </div>
+        <div class="admin-report-controls">
+          <label for="adminReportMonth">Month</label>
+          <input id="adminReportMonth" type="month">
+          <button id="adminRefreshBtn" class="primary" type="button">Refresh report</button>
+          <button id="adminCsvBtn" type="button">Download CSV</button>
+        </div>
+      </div>
+      <div id="adminReportError" class="login-error" role="alert"></div>
+      <div class="stats-grid admin-report-stats">
+        <div class="stat-card"><strong id="adminTotal">0</strong><span>Total Requests</span></div>
+        <div class="stat-card"><strong id="adminAccepted">0</strong><span>Accepted</span></div>
+        <div class="stat-card"><strong id="adminAvailable">0</strong><span>Available</span></div>
+        <div class="stat-card"><strong id="adminEmployees">0</strong><span>Employees</span></div>
+      </div>
+      <div class="admin-report-card">
+        <h3>Monthly activity</h3>
+        <p class="admin-muted">Shift requests posted and accepted in the selected month.</p>
+        <div id="adminMonthlyChart" class="admin-chart"></div>
+      </div>
+      <div class="admin-report-card">
+        <h3>Employee activity</h3>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Employee</th><th>Requests posted</th><th>Shifts accepted</th></tr></thead>
+            <tbody id="adminEmployeeRows"><tr><td colspan="3">No report loaded.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="admin-report-card">
+        <h3>Shift request details</h3>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Posted by</th><th>Shift date</th><th>Time slot</th><th>Posted timestamp</th><th>Status</th><th>Accepted by</th><th>Accepted timestamp</th></tr></thead>
+            <tbody id="adminDetailRows"><tr><td colspan="7">No report loaded.</td></tr></tbody>
+          </table>
+        </div>
+      </div>`;
+    main.appendChild(section);
+
+    btn.addEventListener('click', () => openAdminReports());
+    $('adminRefreshBtn').addEventListener('click', () => loadAdminReport(true));
+    $('adminCsvBtn').addEventListener('click', downloadAdminCsv);
+    $('adminReportMonth').addEventListener('change', () => renderAdminReport());
+    $('adminReportMonth').value = new Date().toISOString().slice(0,7);
+  }
+}
+
+let adminReportDays = [];
+let adminReportLoaded = false;
+
+function adminMonthKey(dateValue){
+  const s = String(dateValue || '').trim();
+  const m = s.match(/^(\d{4})-(\d{2})/);
+  if(m) return `${m[1]}-${m[2]}`;
+  const d = new Date(s);
+  if(Number.isNaN(d.getTime())) return '';
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function adminEsc(value){ return esc(value == null ? '' : String(value)); }
+
+function openAdminReports(){
+  if(!isAdminUser()){
+    toast('Administrator access required.');
+    return;
+  }
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  $('adminTabButton')?.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  $('adminReports')?.classList.add('active');
+  loadAdminReport(false);
+}
+
+async function loadAdminReport(force){
+  if(!isAdminUser()){
+    toast('Administrator access required.');
+    return;
+  }
+  const errorBox = $('adminReportError');
+  if(errorBox) errorBox.textContent = '';
+  try{
+    const r = await api('adminReport');
+    if(!r?.ok) throw new Error(r?.error || 'Unable to load administrator report.');
+    adminReportDays = Array.isArray(r.report) ? r.report : [];
+    adminReportLoaded = true;
+    renderAdminReport();
+  }catch(err){
+    if(errorBox) errorBox.textContent = err.message || 'Unable to load report.';
+  }
+}
+
+function renderAdminReport(){
+  if(!adminReportLoaded) return;
+  const selectedMonth = $('adminReportMonth')?.value || new Date().toISOString().slice(0,7);
+  const postedRows = adminReportDays.filter(d => adminMonthKey(d.createdAt) === selectedMonth);
+  const acceptedRows = adminReportDays.filter(d =>
+    String(d.status||'').toLowerCase() === 'taken' &&
+    adminMonthKey(d.pickedUpAt) === selectedMonth
+  );
+  const rows = adminReportDays.filter(d =>
+    adminMonthKey(d.createdAt) === selectedMonth ||
+    adminMonthKey(d.pickedUpAt) === selectedMonth
+  );
+  const accepted = acceptedRows;
+  const available = postedRows.filter(d => String(d.status||'').toLowerCase() !== 'taken');
+  const employeeNames = new Set([
+    ...postedRows.map(d=>d.name),
+    ...acceptedRows.map(d=>d.pickedUpBy)
+  ].filter(Boolean));
+
+  $('adminTotal').textContent = postedRows.length;
+  $('adminAccepted').textContent = accepted.length;
+  $('adminAvailable').textContent = available.length;
+  $('adminEmployees').textContent = employeeNames.size;
+
+  const employeeMap = {};
+  rows.forEach(d=>{
+    const poster = d.name || 'Unknown';
+    if(!employeeMap[poster]) employeeMap[poster] = {posted:0,accepted:0};
+    employeeMap[poster].posted++;
+    if(String(d.status||'').toLowerCase()==='taken') employeeMap[poster].accepted++;
+    const picker = d.pickedUpBy || '';
+    if(picker){
+      if(!employeeMap[picker]) employeeMap[picker] = {posted:0,accepted:0};
+      employeeMap[picker].accepted++;
+    }
+  });
+  const employeeRows = Object.entries(employeeMap).sort((a,b)=>a[0].localeCompare(b[0]));
+  $('adminEmployeeRows').innerHTML = employeeRows.length
+    ? employeeRows.map(([name,v])=>`<tr><td>${adminEsc(name)}</td><td>${v.posted}</td><td>${v.accepted}</td></tr>`).join('')
+    : '<tr><td colspan="3">No activity for this month.</td></tr>';
+
+  const postedByDay = {};
+  const acceptedByDay = {};
+  rows.forEach(d=>{
+    const day = String(d.createdAt||'').slice(0,10);
+    if(day) postedByDay[day] = (postedByDay[day]||0)+1;
+    if(String(d.status||'').toLowerCase()==='taken' && d.pickedUpAt){
+      const acceptedDay = String(d.pickedUpAt).slice(0,10);
+      acceptedByDay[acceptedDay] = (acceptedByDay[acceptedDay]||0)+1;
+    }
+  });
+  const keys = [...new Set([...Object.keys(postedByDay),...Object.keys(acceptedByDay)])].sort();
+  const max = Math.max(1,...keys.map(k=>Math.max(postedByDay[k]||0,acceptedByDay[k]||0)));
+  $('adminMonthlyChart').innerHTML = keys.length ? keys.map(k=>{
+    const p=postedByDay[k]||0, a=acceptedByDay[k]||0;
+    return `<div class="admin-chart-row"><span>${adminEsc(k)}</span><div class="admin-chart-bars"><div class="admin-bar posted" style="width:${p/max*100}%"><b>${p}</b></div><div class="admin-bar accepted" style="width:${a/max*100}%"><b>${a}</b></div></div></div>`;
+  }).join('') : '<p>No activity recorded for this month.</p>';
+
+  $('adminDetailRows').innerHTML = rows.length ? rows.slice().sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||''))).map(d=>{
+    const start=String(d.startTime||'').replace(':','');
+    const end=String(d.endTime||'').replace(':','');
+    return `<tr><td>${adminEsc(d.name)}</td><td>${adminEsc(d.date)}</td><td>${adminEsc(start)}-${adminEsc(end)}</td><td>${adminEsc(d.createdAt)}</td><td>${adminEsc(d.status)}</td><td>${adminEsc(d.pickedUpBy)}</td><td>${adminEsc(d.pickedUpAt)}</td></tr>`;
+  }).join('') : '<tr><td colspan="7">No requests posted in this month.</td></tr>';
+}
+
+function downloadAdminCsv(){
+  if(!isAdminUser() || !adminReportLoaded) return;
+  const monthValue = $('adminReportMonth')?.value || '';
+  const rows = adminReportDays.filter(d=>adminMonthKey(d.createdAt)===monthValue || adminMonthKey(d.pickedUpAt)===monthValue);
+  const cols = ['Employee','Shift Date','Start Time','End Time','Request Timestamp','Status','Accepted By','Acceptance Timestamp'];
+  const csvCell = v => '"' + String(v??'').replace(/"/g,'""') + '"';
+  const lines = [cols.map(csvCell).join(',')];
+  rows.forEach(d=>lines.push([
+    d.name,d.date,d.startTime,d.endTime,d.createdAt,d.status,d.pickedUpBy,d.pickedUpAt
+  ].map(csvCell).join(',')));
+  const blob = new Blob([lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`ShiftSwap_Report_${monthValue||'month'}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
 const restoredUser=getShiftSession();
 if(restoredUser){ currentUser=restoredUser; unlock(); } else { showLogin(); }
