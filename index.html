@@ -9,6 +9,25 @@
 <meta name="theme-color" content="#164e63">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="style.css?v=20261022-time-slots">
+
+<style>
+.admin-report-head{display:flex;justify-content:space-between;gap:18px;align-items:end;flex-wrap:wrap;margin:22px 0}
+.admin-report-head h2{margin:6px 0}.admin-report-head p,.admin-muted{color:#64748b}
+.admin-report-controls{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.admin-report-controls label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:700}
+.admin-report-controls input{padding:10px;border:1px solid #cbd5e1;border-radius:9px}
+.admin-report-controls button{padding:10px 13px;border:0;border-radius:9px;cursor:pointer}
+.admin-report-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:18px;margin:18px 0;box-shadow:0 5px 18px #0f172a0a}
+.admin-report-card h3{margin:0 0 6px}.admin-chart{display:grid;gap:10px;margin-top:14px}
+.admin-chart-row{display:grid;grid-template-columns:105px 1fr;gap:10px;align-items:center;font-size:12px}
+.admin-chart-bars{display:grid;gap:4px}.admin-bar{height:21px;min-width:26px;border-radius:5px;color:white;padding:2px 7px;box-sizing:border-box;font-size:11px}
+.admin-bar.posted{background:#0f766e}.admin-bar.accepted{background:#dc6b24}
+.admin-table-wrap{overflow-x:auto}.admin-table{width:100%;border-collapse:collapse;font-size:13px;min-width:800px}
+.admin-table th,.admin-table td{padding:10px;text-align:left;border-bottom:1px solid #e2e8f0;white-space:nowrap}
+.admin-table th{background:#f8fafc;color:#334155}
+@media(max-width:650px){.admin-report-head{display:block}.admin-report-controls{margin-top:14px}.admin-chart-row{grid-template-columns:85px 1fr}}
+</style>
+
 </head>
 <body>
 <div id="loginScreen" class="login-screen">
