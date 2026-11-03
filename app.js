@@ -1,5 +1,4 @@
 
-
 // ===== ShiftSwap session: keep login on refresh, sign out after 10 minutes inactive =====
 const SHIFT_SESSION_KEY = "shiftSwapUser";
 const SHIFT_ACTIVITY_KEY = "shiftSwapLastActivity";
@@ -210,25 +209,8 @@ populateMilitaryTimes();
 function card(d){
   const taken=String(d.status).toLowerCase()==='taken';
   // Accept both the Apps Script API names and the Google Sheet column names.
-  function formatMilitaryTime(value) {
-  if (value === null || value === undefined || value === '') return '';
-
-  const text = String(value).trim();
-
-  // Handle full date strings returned by Google Sheets.
-  const match = text.match(/(\d{1,2}):(\d{2})/);
-  if (match) {
-    return match[1].padStart(2, '0') + match[2];
-  }
-
-  // Handle simple HH:mm values.
-  const simple = text.match(/^(\d{1,2})(\d{2})$/);
-  if (simple) return simple[1].padStart(2, '0') + simple[2];
-
-  return text;
-}
-  const startTime=formatMilitaryTime(d.startTime ?? d.StartTime ?? d.start_time ?? d.start ?? '');
-const endTime=formatMilitaryTime(d.endTime ?? d.EndTime ?? d.end_time ?? d.end ?? '');
+  const startTime=d.startTime ?? d.StartTime ?? d.start_time ?? d.start ?? '';
+  const endTime=d.endTime ?? d.EndTime ?? d.end_time ?? d.end ?? '';
   const hasTime=String(startTime).trim()!=='' || String(endTime).trim()!=='';
   return `<div class="day-card ${taken?'taken':''}">
     <div class="shift-date"><span class="line-icon">▦</span><strong>${esc(displayDate(d.date))}</strong></div>
@@ -376,6 +358,22 @@ function adminMonthKey(dateValue){
 }
 function adminEsc(value){ return esc(value == null ? '' : String(value)); }
 
+// Display shift times in the same compact 24-hour military format as the board (e.g. 0400-0900).
+function adminMilitaryTime(value){
+  const raw = String(value ?? '').trim();
+  if(!raw) return '';
+  if(/^\d{4}$/.test(raw)) return raw;
+  const match = raw.match(/^(\d{1,2}):?(\d{2})(?:\s*(AM|PM))?$/i);
+  if(!match) return raw.replace(/:/g,'').replace(/\s*(AM|PM)$/i,'');
+  let hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const meridiem = (match[3] || '').toUpperCase();
+  if(minute > 59 || hour > 24 || (meridiem && (hour < 1 || hour > 12))) return raw;
+  if(meridiem === 'AM' && hour === 12) hour = 0;
+  if(meridiem === 'PM' && hour !== 12) hour += 12;
+  return String(hour).padStart(2,'0') + String(minute).padStart(2,'0');
+}
+
 function openAdminReports(){
   if(!isAdminUser()){
     toast('Administrator access required.');
@@ -465,9 +463,10 @@ function renderAdminReport(){
   }).join('') : '<p>No activity recorded for this month.</p>';
 
   $('adminDetailRows').innerHTML = rows.length ? rows.slice().sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||''))).map(d=>{
-    const start=String(d.startTime||'').replace(':','');
-    const end=String(d.endTime||'').replace(':','');
-    return `<tr><td>${adminEsc(d.name)}</td><td>${adminEsc(d.date)}</td><td>${adminEsc(start)}-${adminEsc(end)}</td><td>${adminEsc(d.createdAt)}</td><td>${adminEsc(d.status)}</td><td>${adminEsc(d.pickedUpBy)}</td><td>${adminEsc(d.pickedUpAt)}</td></tr>`;
+    const start=adminMilitaryTime(d.startTime ?? d.StartTime ?? d.start_time ?? d.start ?? '');
+    const end=adminMilitaryTime(d.endTime ?? d.EndTime ?? d.end_time ?? d.end ?? '');
+    const timeSlot = start || end ? `${start || '----'}-${end || '----'}` : '—';
+    return `<tr><td>${adminEsc(d.name)}</td><td>${adminEsc(d.date)}</td><td>${adminEsc(timeSlot)}</td><td>${adminEsc(d.createdAt)}</td><td>${adminEsc(d.status)}</td><td>${adminEsc(d.pickedUpBy)}</td><td>${adminEsc(d.pickedUpAt)}</td></tr>`;
   }).join('') : '<tr><td colspan="7">No requests posted in this month.</td></tr>';
 }
 
