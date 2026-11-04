@@ -247,7 +247,6 @@ function renderAll(){
   $('messagesList').innerHTML=messages.map(m=>`<div class="message"><b>${esc(m.name)}</b><p>${esc(m.message)}</p><small>${esc(m.createdAt)}</small></div>`).join('')||'<div class="message">No messages yet.</div>';
 
   // Keep the scrolling Team Broadcast banner synchronized with the newest message.
-  // The Apps Script getMessages() function returns newest messages first.
   const broadcast = $('teamBroadcastText');
   if(broadcast){
     const latestMessage = messages.find(m => String(m.message || '').trim());
@@ -386,10 +385,30 @@ function adminMonthKey(dateValue){
 }
 function adminEsc(value){ return esc(value == null ? '' : String(value)); }
 
-// Display shift times in the same compact 24-hour military format as the board (e.g. 0400-0900).
+// Display shift times in compact 24-hour military format (e.g. 0400-0900).
 function adminMilitaryTime(value){
   const raw = String(value ?? '').trim();
   if(!raw) return '';
+
+  // Google Sheets time-only cells may arrive as a Date string:
+  // "Sat Dec 30 1899 030000 GMT-0500 (Eastern Standard Time)".
+  // Extract HHMM from the six-digit time token and ignore seconds.
+  const sheetsDateTime = raw.match(/\b(\d{2})(\d{2})(\d{2})\s+GMT[+-]\d{4}\b/i);
+  if(sheetsDateTime) return sheetsDateTime[1] + sheetsDateTime[2];
+
+  // Handle date strings with a colon-formatted clock.
+  const clockInDate = raw.match(/\b(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?\b/i);
+  if(clockInDate){
+    let hour = Number(clockInDate[1]);
+    const minute = Number(clockInDate[2]);
+    const meridiem = (clockInDate[3] || '').toUpperCase();
+    if(minute <= 59 && hour <= 23){
+      if(meridiem === 'AM' && hour === 12) hour = 0;
+      if(meridiem === 'PM' && hour !== 12) hour += 12;
+      return String(hour).padStart(2,'0') + String(minute).padStart(2,'0');
+    }
+  }
+
   if(/^\d{4}$/.test(raw)) return raw;
   const match = raw.match(/^(\d{1,2}):?(\d{2})(?:\s*(AM|PM))?$/i);
   if(!match) return raw.replace(/:/g,'').replace(/\s*(AM|PM)$/i,'');
