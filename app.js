@@ -260,6 +260,19 @@ function renderAll(){
 
   $('statAvailable').textContent=av.length;$('statTaken').textContent=tk.length;
   $('statEmployees').textContent=employeeCount;
+  // Keep the compact vertical chart synchronized with the dashboard totals.
+  const chartValues = [av.length, tk.length, Number(employeeCount) || 0];
+  const chartMax = Math.max(1, ...chartValues);
+  const chartIds = [
+    ['chartAvailableValue','chartAvailableBar'],
+    ['chartTakenValue','chartTakenBar'],
+    ['chartEmployeesValue','chartEmployeesBar']
+  ];
+  chartIds.forEach(([valueId, barId], index) => {
+    const valueEl = $(valueId), barEl = $(barId);
+    if (valueEl) valueEl.textContent = chartValues[index];
+    if (barEl) barEl.style.setProperty('--bar-height', `${Math.max(5, (chartValues[index] / chartMax) * 100)}%`);
+  });
   renderCalendar();
 }
 async function pickDay(id){

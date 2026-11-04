@@ -26,6 +26,35 @@
 .admin-table th,.admin-table td{padding:10px;text-align:left;border-bottom:1px solid #e2e8f0;white-space:nowrap}
 .admin-table th{background:#f8fafc;color:#334155}
 @media(max-width:650px){.admin-report-head{display:block}.admin-report-controls{margin-top:14px}.admin-chart-row{grid-template-columns:85px 1fr}}
+
+/* Stats dashboard: soft status colors, scoped only to the three summary cards. */
+#stats .stats-grid .stat-card:nth-child(1){
+  background:#e9f8ee !important;
+  border:1px solid #ccebd6;
+}
+#stats .stats-grid .stat-card:nth-child(2){
+  background:#fdebec !important;
+  border:1px solid #f5cfd2;
+}
+#stats .stats-grid .stat-card:nth-child(3){
+  background:#f1f3f5 !important;
+  border:1px solid #dfe3e7;
+}
+
+/* Compact vertical summary chart on the Stats tab. */
+#stats .stats-mini-chart{margin:16px auto 4px;max-width:560px;background:#fff;border:1px solid #e5eaf0;border-radius:15px;padding:14px 18px 12px;box-shadow:0 5px 18px #0f172a0a}
+#stats .stats-mini-chart h3{margin:0 0 10px;font-size:15px;color:#17324d}
+#stats .mini-chart-plot{height:142px;display:flex;align-items:flex-end;justify-content:space-around;gap:18px;border-bottom:1px solid #dbe2ea;padding:0 12px}
+#stats .mini-chart-item{height:100%;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;min-width:0}
+#stats .mini-chart-value{font-size:12px;font-weight:800;color:#18324b}
+#stats .mini-chart-bar{width:min(54px,72%);height:var(--bar-height,6%);min-height:5px;border-radius:7px 7px 0 0;transition:height .25s ease}
+#stats .mini-chart-bar.available{background:#a9dfba}
+#stats .mini-chart-bar.taken{background:#efb1b5}
+#stats .mini-chart-bar.employees{background:#cbd1d8}
+#stats .mini-chart-labels{display:flex;justify-content:space-around;gap:18px;padding:7px 12px 0}
+#stats .mini-chart-labels span{flex:1;text-align:center;font-size:11px;color:#64748b;line-height:1.25}
+@media(max-width:520px){#stats .stats-mini-chart{padding:12px}#stats .mini-chart-plot{height:118px;gap:8px;padding:0 4px}#stats .mini-chart-labels{gap:8px;padding-left:4px;padding-right:4px}#stats .mini-chart-labels span{font-size:10px}}
+
 </style>
 
 </head>
@@ -128,6 +157,15 @@
         <div class="stat-card"><strong id="statAvailable">0</strong><span>Available Days</span></div>
         <div class="stat-card"><strong id="statTaken">0</strong><span>Taken Days</span></div>
         <div class="stat-card"><strong id="statEmployees">0</strong><span>Employees count</span></div>
+      </div>
+      <div class="stats-mini-chart" aria-label="Vertical chart of available days, taken days, and employee count">
+        <h3>Team Overview</h3>
+        <div class="mini-chart-plot">
+          <div class="mini-chart-item"><span class="mini-chart-value" id="chartAvailableValue">0</span><div class="mini-chart-bar available" id="chartAvailableBar" style="--bar-height:5%"></div></div>
+          <div class="mini-chart-item"><span class="mini-chart-value" id="chartTakenValue">0</span><div class="mini-chart-bar taken" id="chartTakenBar" style="--bar-height:5%"></div></div>
+          <div class="mini-chart-item"><span class="mini-chart-value" id="chartEmployeesValue">0</span><div class="mini-chart-bar employees" id="chartEmployeesBar" style="--bar-height:5%"></div></div>
+        </div>
+        <div class="mini-chart-labels"><span>Available Days</span><span>Taken Days</span><span>Employees count</span></div>
       </div>
     </section>
   </main>
