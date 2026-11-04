@@ -78,7 +78,7 @@ function sortAvailableDays(days) {
   });
 }
 
-let currentUser=null, days=[], messages=[], month=new Date();
+let currentUser=null, days=[], messages=[], employeeCount=0, month=new Date();
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -168,11 +168,13 @@ async function load(force=false){
       if(!r.ok)throw Error(r.error);
       shiftListCache={
         days:Array.isArray(r.days)?r.days:[],
-        messages:Array.isArray(r.messages)?r.messages:[]
+        messages:Array.isArray(r.messages)?r.messages:[],
+        userCount:Number(r.userCount)||0
       };
       shiftListCacheAt=Date.now();
       days=sortAvailableDays(shiftListCache.days);
       messages=shiftListCache.messages;
+      employeeCount=shiftListCache.userCount;
       renderAll();
     }catch(e){
       toast(e.message||'Unable to load ShiftSwap');
@@ -257,7 +259,7 @@ function renderAll(){
   }
 
   $('statAvailable').textContent=av.length;$('statTaken').textContent=tk.length;
-  $('statEmployees').textContent=new Set(days.map(d=>d.name).filter(Boolean)).size;
+  $('statEmployees').textContent=employeeCount;
   renderCalendar();
 }
 async function pickDay(id){
