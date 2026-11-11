@@ -143,47 +143,80 @@ $('loginForm').addEventListener('submit',async e=>{
   try{await login($('loginCode').value)}
   catch(err){$('loginError').textContent=err.message}
 });
-$('logout').onclick=()=>{clearShiftSession();currentUser=null;days=[];messages=[];showLogin()};
+$('logout').onclick=()=>{
+  try{if(currentUser?.code)localStorage.removeItem(`shiftSwapSnapshot:${String(currentUser.code).replace(/\D/g,'')}`)}catch(e){}
+  clearShiftSession();currentUser=null;days=[];messages=[];employeeCount=0;
+  shiftListCache=null;shiftListCacheAt=0;
+  showLogin();
+};
 
 let shiftLoadPromise=null;
 let shiftListCache=null;
 let shiftListCacheAt=0;
 const SHIFT_CLIENT_CACHE_MS=2500;
+const SHIFT_SNAPSHOT_MAX_AGE_MS=24*60*60*1000;
+const shiftSnapshotKey=()=>`shiftSwapSnapshot:${String(currentUser?.code||'').replace(/\D/g,'')}`;
+
+function applyShiftSnapshot(snapshot){
+  shiftListCache={
+    days:Array.isArray(snapshot.days)?snapshot.days:[],
+    messages:Array.isArray(snapshot.messages)?snapshot.messages:[],
+    userCount:Number(snapshot.userCount)||0
+  };
+  shiftListCacheAt=Number(snapshot.savedAt)||Date.now();
+  days=sortAvailableDays(shiftListCache.days);
+  messages=shiftListCache.messages;
+  employeeCount=shiftListCache.userCount;
+  renderAll();
+}
+
+function loadSavedShiftSnapshot(){
+  if(!currentUser?.code) return false;
+  try{
+    const raw=localStorage.getItem(shiftSnapshotKey());
+    if(!raw) return false;
+    const snapshot=JSON.parse(raw);
+    if(!snapshot || !snapshot.savedAt || Date.now()-Number(snapshot.savedAt)>SHIFT_SNAPSHOT_MAX_AGE_MS) return false;
+    applyShiftSnapshot(snapshot);
+    return true;
+  }catch(e){
+    return false;
+  }
+}
 
 async function load(force=false){
   if(!force && shiftListCache && (Date.now()-shiftListCacheAt)<SHIFT_CLIENT_CACHE_MS){
-    days=sortAvailableDays(shiftListCache.days||[]);
-    messages=shiftListCache.messages||[];
     renderAll();
     return;
   }
 
-  if(shiftLoadPromise && !force){
-    return shiftLoadPromise;
-  }
+  if(!shiftListCache) loadSavedShiftSnapshot();
+  if(shiftLoadPromise && !force) return shiftLoadPromise;
 
   shiftLoadPromise=(async()=>{
     try{
       const r=await api('list');
       if(!r.ok)throw Error(r.error);
-      shiftListCache={
+      const freshSnapshot={
         days:Array.isArray(r.days)?r.days:[],
         messages:Array.isArray(r.messages)?r.messages:[],
-        userCount:Number(r.userCount)||0
+        userCount:Number(r.userCount)||0,
+        savedAt:Date.now()
       };
-      shiftListCacheAt=Date.now();
-      days=sortAvailableDays(shiftListCache.days);
-      messages=shiftListCache.messages;
-      employeeCount=shiftListCache.userCount;
+      shiftListCache=freshSnapshot;
+      shiftListCacheAt=freshSnapshot.savedAt;
+      days=sortAvailableDays(freshSnapshot.days);
+      messages=freshSnapshot.messages;
+      employeeCount=freshSnapshot.userCount;
       renderAll();
+      try{localStorage.setItem(shiftSnapshotKey(),JSON.stringify(freshSnapshot));}catch(storageError){}
     }catch(e){
-      toast(e.message||'Unable to load ShiftSwap');
-      throw e;
+      // Keep an already displayed snapshot visible if the network is temporarily slow.
+      toast(e.message||'Unable to refresh ShiftSwap');
     }finally{
       shiftLoadPromise=null;
     }
   })();
-
   return shiftLoadPromise;
 }
 

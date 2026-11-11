@@ -55,6 +55,7 @@
 #stats .mini-chart-labels span{flex:1;text-align:center;font-size:11px;color:#64748b;line-height:1.25}
 @media(max-width:520px){#stats .stats-mini-chart{padding:12px}#stats .mini-chart-plot{height:118px;gap:8px;padding:0 4px}#stats .mini-chart-labels{gap:8px;padding-left:4px;padding-right:4px}#stats .mini-chart-labels span{font-size:10px}}
 
+#teamBroadcastText:empty::before{content:"Loading latest team announcement…";opacity:.8}
 </style>
 
 </head>
@@ -104,9 +105,7 @@
        <div class="team-broadcast">
         <div class="broadcast-label">📢 TEAM BROADCAST</div>
         <div class="broadcast-track">
-          <div id="teamBroadcastText" class="broadcast-message">
-  Welcome to ShiftSwap! Check the Messages tab for team announcements.
-</div>
+          <div id="teamBroadcastText" class="broadcast-message" aria-live="polite" aria-atomic="true"></div>
         </div>
       </div>
       <div class="board-section available-section">
@@ -219,7 +218,7 @@
   fillShiftTimes();
 })();
 </script>
-<script src="app.js?v=20261104-employee-count"></script>
+<script src="app.js?v=20261110-instant-refresh-broadcast"></script>
   <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
